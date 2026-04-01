@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+    <title>Login - Los Gallegos Lubricentro</title>
+    <link rel="stylesheet" href="../../css/estilos.css">
+</head>
+<body>
+
+    <main class="container-login">
+        
+        <img src="../../recursos/Logo Los Gallegos.png" alt="Logo Los Gallegos" class="logo-login">
+        
+        <h1 class="titulo-login">Los Gallegos Lubricentro</h1>
+
+        <section class="panel-central-login">
+            <form>
+                <div class="form-group-login">
+                    <label for="usuario">Usuario:</label>
+                    <input type="text" id="usuario" class="input-login" placeholder="Ingrese su usuario">
+                </div>
+
+                <div class="form-group-login">
+                    <label for="contrasena">Contraseña:</label>
+                    <div class="password-container">
+                        <input type="password" id="contrasena" class="input-login" placeholder="Ingrese su contraseña">
+                        <img src="../../recursos/ojoPasswords.svg" id="togglePassword" class="icono-ojo" alt="Ver/Ocultar contraseña">
+                    </div>
+                </div>
+
+                <div class="opciones-adicionales-login">
+                    <div class="grupo-recordarme">
+                        <input type="checkbox" id="recordarme">
+                        <label for="recordarme">Recordarme</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-login">Iniciar Sesión</button>
+            </form>
+        </section>
+
+    </main>
+
+    <!-- Modal del sistema (reemplaza alert/confirm) -->
+    <div id="modal-sistema" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-titulo" class="modal-titulo">Título del Modal</h3>
+            <p id="modal-mensaje" class="modal-texto">Mensaje principal aquí.</p>
+            <p id="modal-submensaje" class="modal-subtexto"></p>
+            <div class="modal-botones">
+                <button id="btn-modal-cancelar" class="modal-btn cancelar">Cancelar</button>
+                <button id="btn-modal-confirmar" class="modal-btn confirmar">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="login.js"></script>
+</body>
+</html>

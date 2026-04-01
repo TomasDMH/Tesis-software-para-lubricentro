@@ -1,0 +1,679 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+    <title>Gestión de Stock</title>
+    <link rel="stylesheet" href="../css/estilos.css">
+
+    <style>
+        /* Tabs internos */
+        .subpestanas-stock {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0 18px 0;
+            flex-wrap: wrap;
+        }
+        .subpestanas-stock .btn-subpestana {
+            padding: 10px 14px;
+            border: 1.2px solid #fab062;
+            background: #01242c;
+            color: #fab062;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .subpestanas-stock .btn-subpestana.activa {
+            background: #fab062;
+            color: #01242c;
+        }
+
+        .seccion-form-stock { display: none; width: 100%; }
+        .seccion-form-stock.activa { display: block; width: 100%; }
+
+        /* Tabla items factura */
+        .tabla-items-factura {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .tabla-items-factura th, .tabla-items-factura td {
+            border: 1px solid rgba(250,176,98,0.35);
+            padding: 8px;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        .tabla-items-factura th {
+            color: #fab062;
+            background: rgba(1,36,44,0.65);
+        }
+        .tabla-items-factura td input, .tabla-items-factura td select {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .acciones-inline {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        /* Auditoría */
+        #vista-stock-auditoria { display: none; }
+        .subtabs-auditoria {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .subtabs-auditoria .btn-subtab {
+            padding: 8px 12px;
+            border: 1.2px solid #fab062;
+            background: #01242c;
+            color: #fab062;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .subtabs-auditoria .btn-subtab.activa {
+            background: #fab062;
+            color: #01242c;
+        }
+        .seccion-auditoria { display:none; }
+        .seccion-auditoria.activa { display:block; }
+
+        /* Modal detalle factura */
+        #modal-detalle-factura {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #modal-detalle-factura .modal-content {
+            width: min(900px, 95vw);
+            max-height: 90vh;
+            overflow: auto;
+            background: #01242c;
+            border: 1.2px solid #fab062;
+            border-radius: 10px;
+            padding: 16px;
+        }
+        #modal-detalle-factura h3 {
+            color: #fab062;
+            margin-top: 0;
+        }
+        #modal-detalle-factura .modal-acciones {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 12px;
+        }
+
+        /* Filtros auditoría */
+        .filtros-auditoria {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            margin: 6px 0 12px 0;
+            padding: 10px 12px;
+            border: 1.2px solid rgba(250,176,98,0.35);
+            border-radius: 10px;
+            background: rgba(1,36,44,0.45);
+        }
+        .filtros-auditoria .filtro-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 170px;
+        }
+        .filtros-auditoria .filtro-item label {
+            color: #fab062;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .filtros-auditoria .filtro-acciones {
+            min-width: auto;
+        }
+
+        /* Live search (Factura: Producto) */
+        .item-producto-wrapper {
+            position: relative;
+        }
+        .item-producto-wrapper .resultados-flotantes {
+            width: 100%;
+            max-height: 190px;
+        }
+
+    </style>
+</head>
+
+<body>
+    <script>
+        // Control de visibilidad según rol
+        (function() {
+            const rolUsuario = localStorage.getItem('usuarioRol');
+            if (rolUsuario === '2') {
+                window.location.href = '../moduloServicios/clientes/index.html';
+                return;
+            }
+            const estilos = [];
+            if (rolUsuario !== '1') estilos.push('a[href*="abmUsuarios"] { display: none !important; }');
+            if (rolUsuario !== '1' && rolUsuario !== '3') estilos.push('a[href*="dashboard"] { display: none !important; }');
+            if (estilos.length) {
+                const estilo = document.createElement('style');
+                estilo.textContent = estilos.join(' ');
+                document.head.appendChild(estilo);
+            }
+        })();
+    </script>
+
+    <header class="header-principal">
+        <nav class="pestanas-navegacion">
+            <a href="../moduloDashboard/dashboard.html" class="pestana">Dashboard</a>
+            <a href="../moduloServicios/clientes/index.html" class="pestana">Gestión de Clientes</a>
+            <a href="../moduloServicios/servicios/servicios.html" class="pestana">Servicios</a>
+            <a href="stock.html" class="pestana">Stock</a>
+            <a href="../moduloServicios/presupuestos/presupuestos.html" class="pestana">Presupuestos</a>
+            <a href="../moduloLogin/abmUsuarios/abmUsuarios.html" class="pestana">ABM</a>
+        </nav>
+        <img src="../recursos/botonONOFF.svg" alt="Cerrar Sesión" class="boton-cierre-sesion">
+    </header>
+
+    <main class="container-stock">
+
+        <div class="titulo-con-logo">
+            <img src="../recursos/Logo Los Gallegos.png" alt="Logo" class="logo-titulo">
+            <h1 class="titulo-stock">Gestión de Stock</h1>
+        </div>
+
+        <div class="subpestanas-stock">
+            <button type="button" id="tab-stock-productos" class="btn-subpestana activa">Productos (ABM)</button>
+            <button type="button" id="tab-stock-factura" class="btn-subpestana">Registrar Compra (Factura)</button>
+            <button type="button" id="tab-stock-ajuste" class="btn-subpestana">Registrar Ajuste</button>
+            <button type="button" id="tab-stock-auditoria" class="btn-subpestana">Auditoría</button>
+        </div>
+
+        <div class="main-content-stock">
+
+            <section class="panel-izq-stock">
+
+                <!-- 1) ABM PRODUCTOS -->
+                <div id="seccion-form-productos" class="seccion-form-stock activa">
+                    <form class="form-stock" id="form-producto-stock">
+                        <div class="stock-form-header">
+                            <h2 class="subtitulo-stock" id="titulo-form-producto">Cargar Nuevo Producto</h2>
+                            <button type="button" id="btn-cancelar-edicion-stock" class="btn-cancelar-edicion">Cancelar Edición</button>
+                        </div>
+
+                        <div class="form-columnas-stock">
+                            <div class="columna-izq-stock">
+                                <div class="form-group-stock">
+                                    <label for="nombre-producto-stock">Nombre:</label>
+                                    <input type="text" id="nombre-producto-stock" class="input-stock">
+                                </div>
+
+                                <div class="form-group-stock">
+                                    <label for="tipo-producto-stock">Tipo:</label>
+                                    <select id="tipo-producto-stock" class="select-stock">
+                                        <option value="">Seleccionar tipo</option>
+                                        <option value="aceite">Aceite</option>
+                                        <option value="liquido_refrigerante">Líquido Refrigerante</option>
+                                        <option value="filtro">Filtro</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group-stock">
+                                    <label for="tipo-envase-stock">Tipo Envase:</label>
+                                    <select id="tipo-envase-stock" class="select-stock">
+                                        <option value="">Seleccionar envase</option>
+                                        <option value="Tambor (200 lts)">Tambor (200 lts)</option>
+                                        <option value="Bidon (4 lts)">Bidon (4 lts)</option>
+                                        <option value="Bidon (5 lts)">Bidon (5 lts)</option>
+                                        <option value="Botella (1lt)">Botella (1lt)</option>
+                                        <option value="Caja (1 unidad)">Caja (1 unidad)</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group-stock">
+                                    <label for="marca-producto-stock">Marca:</label>
+                                    <select id="marca-producto-stock" class="select-stock">
+                                        <option value="">Seleccionar marca</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group-stock">
+                                    <label for="agregar-marca-producto">Agregar Marca:</label>
+                                    <div class="acciones-inline">
+                                        <input type="text" id="agregar-marca-producto" class="input-stock" placeholder="Nueva marca">
+                                        <button type="button" id="btn-agregar-marca-producto" class="btn-mini">Agregar</button>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-stock">
+                                    <label for="stock-minimo-producto">Stock Mínimo (Litros/Unidades):</label>
+                                    <input type="number" id="stock-minimo-producto" class="input-stock" step="1" min="0" placeholder="0">
+                                </div>
+
+                                <div class="form-group-stock" id="grupo-stock-actual" style="display:none;">
+                                    <label>Stock actual:</label>
+                                    <div style="padding: 10px; border: 1px solid rgba(250,176,98,0.35); border-radius: 8px; color:#fff;">
+                                        <strong id="stock-actual-litros">0.00</strong> L
+                                    </div>
+                                    <small class="form-hint" style="color:#bbb; display:block; margin-top:6px;">
+                                        El stock no se edita aquí. Se registra por Factura / Ajuste / Servicio.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="columna-der-stock">
+                                <div class="form-group-stock">
+                                    <label for="unidad-medida-stock">Unidad de Medida:</label>
+                                    <select id="unidad-medida-stock" class="select-stock" disabled>
+                                        <option value="ml" selected>Mililitros (o Unidades si corresponde)</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group-stock">
+                                    <label for="precio-producto-stock">Precio (Referencia):</label>
+                                    <input type="text" id="precio-producto-stock" class="input-stock" placeholder="0">
+                                </div>
+
+                                <div class="form-group-stock">
+                                    <label for="proveedor-producto-stock">Proveedor (Referencia):</label>
+                                    <div class="acciones-inline">
+                                        <select id="proveedor-producto-stock" class="select-stock" style="flex:1;">
+                                            <option value="">Seleccionar proveedor</option>
+                                        </select>
+                                        <button type="button" id="btn-editar-proveedor" class="btn-mini secundario">Editar</button>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-stock">
+                                    <label for="agregar-proveedor-stock">Agregar Proveedor:</label>
+                                    <div class="acciones-inline">
+                                        <input type="text" id="agregar-proveedor-stock" class="input-stock" placeholder="Nombre del proveedor">
+                                        <button type="button" id="btn-agregar-proveedor" class="btn-mini">Agregar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="btn-guardar-producto" class="cargar-producto-btn-stock">Guardar Producto</button>
+                    </form>
+                </div>
+
+                <!-- 2) REGISTRAR FACTURA -->
+                <div id="seccion-form-factura" class="seccion-form-stock">
+                    <form class="form-stock" id="form-factura-stock">
+                        <div class="stock-form-header">
+                            <h2 class="subtitulo-stock">Registrar Compra por Factura</h2>
+                        </div>
+
+                        <div class="form-group-stock">
+                            <label for="factura-proveedor-stock">Proveedor:</label>
+                            <select id="factura-proveedor-stock" class="select-stock">
+                                <option value="">Seleccionar proveedor</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group-stock">
+                            <label for="factura-nro-stock">Número de Factura / Comprobante:</label>
+                            <input type="text" id="factura-nro-stock" class="input-stock" placeholder="A-0001-00000001">
+                        </div>
+
+                        <div class="form-group-stock">
+                            <label for="factura-fecha-stock">Fecha:</label>
+                            <input type="date" id="factura-fecha-stock" class="input-stock">
+                        </div>
+
+                        <div class="form-group-stock">
+                            <label>Ítems de la Factura:</label>
+
+                            <table class="tabla-items-factura" id="tabla-items-factura">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 30%;">Producto</th>
+                                        <th style="width: 12%;">Cant.</th>
+                                        <th style="width: 16%;">Litros/unidad</th>
+                                        <th style="width: 16%;">Precio Unit.</th>
+                                        <th style="width: 16%;">Subtotal</th>
+                                        <th style="width: 10%;">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-items-factura"></tbody>
+                            </table>
+
+                            <div class="acciones-inline" style="margin-top: 10px;">
+                                <button type="button" id="btn-agregar-item-factura" class="btn-mini">Agregar ítem</button>
+                                <div style="margin-left:auto; color:#fff;">
+                                    Total: <strong id="factura-total">$0</strong>
+                                </div>
+                            </div>
+
+                            <small class="form-hint" style="color:#bbb; display:block; margin-top:6px;">
+                                Fuente de verdad: mililitros (ml). Para envase "Otro" se solicita Litros/unidad en el renglón.
+                            </small>
+                        </div>
+
+                        <button type="submit" class="cargar-producto-btn-stock">Registrar Factura</button>
+                    </form>
+                </div>
+
+                <!-- 3) REGISTRAR AJUSTE -->
+                <div id="seccion-form-ajuste" class="seccion-form-stock">
+                    <form class="form-stock" id="form-ajuste-stock">
+                        <div class="stock-form-header">
+                            <h2 class="subtitulo-stock">Registrar Ajuste de Stock</h2>
+                        </div>
+
+                        <div class="form-group-stock">
+                            <label for="ajuste-producto-stock">Producto:</label>
+                            <select id="ajuste-producto-stock" class="select-stock">
+                                <option value="">Seleccionar producto</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group-stock">
+                            <label for="ajuste-motivo-stock">Motivo:</label>
+                            <select id="ajuste-motivo-stock" class="select-stock">
+                                <option value="">Seleccionar motivo</option>
+                                <option value="Pérdida">Pérdida</option>
+                                <option value="Rotura">Rotura</option>
+                                <option value="Robo">Robo</option>
+                                <option value="Corrección">Corrección</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group-stock">
+                            <label for="ajuste-direccion-stock">Dirección:</label>
+                            <select id="ajuste-direccion-stock" class="select-stock">
+                                <option value="salida">Egreso (-)</option>
+                                <option value="entrada">Ingreso (+)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group-stock">
+                            <label for="ajuste-litros-stock">Cantidad (Litros/Unidades):</label>
+                            <input type="number" id="ajuste-litros-stock" class="input-stock" step="0.1" placeholder="Ej: 5">
+                        </div>
+
+                        <div class="form-group-stock">
+                            <label for="ajuste-detalle-stock">Detalle:</label>
+                            <textarea id="ajuste-detalle-stock" class="input-stock" rows="3" style="resize: vertical;"></textarea>
+                        </div>
+
+                        <button type="submit" class="cargar-producto-btn-stock">Registrar Ajuste</button>
+                    </form>
+                </div>
+
+            </section>
+
+            <section class="panel-derecho-stock">
+
+                <!-- VISTA PRODUCTOS -->
+                <div id="vista-stock-productos">
+                    <div class="contenedor-campana">
+                        <img src="../recursos/campanita-notificaciones.svg" alt="Notificaciones" class="campanita-stock">
+                        <span class="punto-rojo"></span>
+
+                        <div class="popup-notificaciones">
+                            <h3>Alertas de Stock Bajo</h3>
+                            <ul class="lista-alertas"></ul>
+                        </div>
+                    </div>
+
+                    <h2 class="subtitulo-productos-stock">Stock de Productos</h2>
+                    <input type="text" class="buscar-producto-stock" placeholder="Buscar producto...">
+
+                    <div class="tabla-stock-wrapper">
+                        <table class="tabla-stock" id="stock-productos-tabla">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Tipo</th>
+                                    <th>Tipo Envase</th>
+                                    <th>Cantidad</th>
+                                    <th>Marca</th>
+                                    <th>Proveedor</th>
+                                    <th>Litros/Unidades</th>
+                                    <th>$</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+
+                    <div class="paginacion-container" id="paginacion-controls" style="display: none;">
+                        <button type="button" id="btn-prev-page" class="btn-paginacion">Anterior</button>
+                        <span id="info-pagina" class="info-paginacion">Página 1 de 1</span>
+                        <button type="button" id="btn-next-page" class="btn-paginacion">Siguiente</button>
+                    </div>
+                </div>
+
+                <!-- VISTA AUDITORÍA -->
+                <div id="vista-stock-auditoria">
+                    <h2 class="subtitulo-productos-stock">Auditoría</h2>
+
+                    <div class="subtabs-auditoria">
+                        <button type="button" id="subtab-facturas" class="btn-subtab activa">Facturas</button>
+                        <button type="button" id="subtab-movimientos" class="btn-subtab">Movimientos</button>
+                    </div>
+
+                    <div id="auditoria-facturas" class="seccion-auditoria activa">
+                        
+                        <div class="filtros-auditoria">
+                            <div class="filtro-item">
+                                <label for="filtro-fact-fecha">Fecha:</label>
+                                <input type="date" id="filtro-fact-fecha" class="input-stock">
+                            </div>
+
+                            <div class="filtro-item">
+                                <label for="filtro-fact-proveedor">Proveedor:</label>
+                                <select id="filtro-fact-proveedor" class="select-stock">
+                                    <option value="">Todos</option>
+                                </select>
+                            </div>
+
+                            <div class="filtro-item">
+                                <label for="filtro-fact-nro">Nro. Fact.:</label>
+                                <input type="text" id="filtro-fact-nro" class="input-stock" placeholder="A-0001-00000001">
+                            </div>
+
+                            <div class="filtro-item filtro-acciones">
+                                <button type="button" id="btn-limpiar-filtros-fact" class="btn-mini">Limpiar</button>
+                            </div>
+                        </div>
+<div class="tabla-stock-wrapper">
+                            <table class="tabla-stock" id="tabla-audit-facturas">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Proveedor</th>
+                                        <th>Nro. Fact.</th>
+                                        <th>Total</th>
+                                        <th>Items</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                        <div class="paginacion-container" id="paginacion-audit-facturas" style="display: none;">
+                            <button type="button" id="btn-prev-audit-facturas" class="btn-paginacion">Anterior</button>
+                            <span id="info-pagina-audit-facturas" class="info-paginacion">Página 1 de 1</span>
+                            <button type="button" id="btn-next-audit-facturas" class="btn-paginacion">Siguiente</button>
+                        </div>
+
+                    </div>
+
+                    <div id="auditoria-movimientos" class="seccion-auditoria">
+                        
+                        <div class="filtros-auditoria">
+                            <div class="filtro-item">
+                                <label for="filtro-mov-fecha">Fecha:</label>
+                                <input type="date" id="filtro-mov-fecha" class="input-stock">
+                            </div>
+
+                            <div class="filtro-item" style="position: relative;">
+                                <label for="filtro-mov-producto">Producto:</label>
+                                <input type="text" id="filtro-mov-producto" class="input-stock" autocomplete="off" placeholder="Buscar...">
+                                <div id="resultados-filtro-mov-producto" class="resultados-flotantes" style="max-height: 190px;"></div>
+                            </div>
+
+                            <div class="filtro-item">
+                                <label for="filtro-mov-tipo">Tipo:</label>
+                                <select id="filtro-mov-tipo" class="select-stock">
+                                    <option value="">Todos</option>
+                                    <option value="ENTRADA">ENTRADA</option>
+                                    <option value="SALIDA">SALIDA</option>
+                                    <option value="AJUSTE">AJUSTE</option>
+                                </select>
+                            </div>
+
+                            <div class="filtro-item">
+                                <label for="filtro-mov-usuario">Usuario:</label>
+                                <select id="filtro-mov-usuario" class="select-stock">
+                                    <option value="">Todos</option>
+                                </select>
+                            </div>
+
+                            <div class="filtro-item filtro-acciones">
+                                <button type="button" id="btn-limpiar-filtros-mov" class="btn-mini">Limpiar</button>
+                            </div>
+                        </div>
+<div class="tabla-stock-wrapper">
+                            <table class="tabla-stock" id="tabla-audit-movimientos">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Producto</th>
+                                        <th>Tipo</th>
+                                        <th>Diferencia</th>
+                                        <th>Antes</th>
+                                        <th>Después</th>
+                                        <th>Origen</th>
+                                        <th>Usuario</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+
+                        <div class="paginacion-container" id="paginacion-audit-movimientos" style="display: none;">
+                            <button type="button" id="btn-prev-audit-movimientos" class="btn-paginacion">Anterior</button>
+                            <span id="info-pagina-audit-movimientos" class="info-paginacion">Página 1 de 1</span>
+                            <button type="button" id="btn-next-audit-movimientos" class="btn-paginacion">Siguiente</button>
+                        </div>
+                        </div>
+                        <small class="form-hint" style="color:#bbb; display:block; margin-top:8px;">
+                            Los movimientos provienen de: Facturas (ENTRADA), Servicios (SALIDA) y Ajustes (AJUSTE).
+                        </small>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal genérico del sistema -->
+    <div id="modal-sistema" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-titulo" class="modal-titulo">Título del Modal</h3>
+            <p id="modal-mensaje" class="modal-texto">Mensaje principal aquí.</p>
+            <p id="modal-submensaje" class="modal-subtexto"></p>
+
+            <div class="modal-botones">
+                <button id="btn-modal-cancelar" class="modal-btn cancelar">Cancelar</button>
+                <button id="btn-modal-confirmar" class="modal-btn confirmar">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal detalle factura -->
+    <div id="modal-detalle-factura">
+        <div class="modal-content">
+            <h3 id="detalle-factura-titulo">Detalle de Factura</h3>
+            <div id="detalle-factura-subtitulo" style="color:#fff; margin-bottom: 10px;"></div>
+
+            <table class="tabla-items-factura">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Envase</th>
+                        <th>Cant.</th>
+                        <th>Precio Unit.</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody id="detalle-factura-body"></tbody>
+            </table>
+
+            <div style="text-align:right; font-size:1.1em; color:#fab062; font-weight:bold; margin-top:12px; border-top:1px solid rgba(250,176,98,0.35); padding-top:10px;">
+                Total: <span id="detalle-factura-total">$0</span>
+            </div>
+
+            <div class="modal-acciones">
+                <button type="button" id="btn-descargar-detalle-factura" class="btn-mini secundario" style="margin-right:8px;">Descargar</button>
+                <button type="button" id="btn-cerrar-detalle-factura" class="btn-mini">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal editar proveedor -->
+    <div id="modal-editar-proveedor" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+        <div class="modal-content" style="width:min(600px,95vw); max-height:90vh; overflow:auto; background:#01242c; border:1.2px solid #fab062; border-radius:10px; padding:20px;">
+            <h3 style="color:#fab062; margin-top:0;">Editar Proveedor</h3>
+            <div class="form-group-stock">
+                <label style="color:#fab062;">Nombre:</label>
+                <input type="text" id="edit-prov-nombre" class="input-stock">
+            </div>
+            <div class="form-group-stock">
+                <label style="color:#fab062;">Razón Social:</label>
+                <input type="text" id="edit-prov-razon" class="input-stock">
+            </div>
+            <div class="form-group-stock">
+                <label style="color:#fab062;">CUIT:</label>
+                <input type="text" id="edit-prov-cuit" class="input-stock">
+            </div>
+            <div class="form-group-stock">
+                <label style="color:#fab062;">Dirección:</label>
+                <input type="text" id="edit-prov-direccion" class="input-stock">
+            </div>
+            <div class="form-group-stock">
+                <label style="color:#fab062;">Teléfono:</label>
+                <input type="text" id="edit-prov-telefono" class="input-stock">
+            </div>
+            <div class="acciones-inline" style="margin-top:12px; justify-content:flex-end;">
+                <button type="button" id="btn-guardar-edit-prov" class="btn-mini">Guardar</button>
+                <button type="button" id="btn-eliminar-edit-prov" class="btn-mini peligro" style="display:none;">Eliminar</button>
+                <button type="button" id="btn-cerrar-edit-prov" class="btn-mini secundario">Cerrar</button>
+            </div>
+            <hr style="border:1px solid rgba(250,176,98,0.35); margin:12px 0;">
+            <h4 style="color:#fab062;">Lista de Proveedores</h4>
+            <div id="lista-proveedores-edit" style="max-height:250px; overflow-y:auto;"></div>
+        </div>
+    </div>
+
+    <!-- Modal detalle ajuste -->
+    <div id="modal-detalle-ajuste" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; align-items:center; justify-content:center; padding:20px;">
+        <div class="modal-content" style="width:min(500px,95vw); background:#01242c; border:1.2px solid #fab062; border-radius:10px; padding:20px;">
+            <h3 style="color:#fab062; margin-top:0;">Detalle del Ajuste</h3>
+            <div id="detalle-ajuste-contenido" style="color:#fff; white-space:pre-wrap;"></div>
+            <div class="modal-acciones" style="margin-top:12px;">
+                <button type="button" id="btn-cerrar-detalle-ajuste" class="btn-mini">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="stock.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - Los Gallegos</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+    <link rel="stylesheet" href="../css/estilos.css">
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+        .dashboard-card {
+            background: rgba(1,36,44,0.85);
+            border: 1.2px solid rgba(250,176,98,0.4);
+            border-radius: 12px;
+            padding: 18px 20px;
+            text-align: center;
+        }
+        .dashboard-card h4 {
+            color: #fab062;
+            margin: 0 0 8px 0;
+            font-size: 0.95em;
+            font-weight: 600;
+        }
+        .dashboard-card .kpi-valor {
+            color: #fff;
+            font-size: 2em;
+            font-weight: bold;
+        }
+        .dashboard-card .kpi-sub {
+            color: #bbb;
+            font-size: 0.8em;
+            margin-top: 4px;
+        }
+        .dashboard-charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        .chart-container {
+            background: rgba(1,36,44,0.85);
+            border: 1.2px solid rgba(250,176,98,0.4);
+            border-radius: 12px;
+            padding: 18px;
+            position: relative;
+            min-height: 300px;
+        }
+        .chart-container h4 {
+            color: #fab062;
+            margin: 0 0 12px 0;
+            font-size: 1em;
+        }
+        .chart-container canvas {
+            max-height: 260px;
+        }
+        .dashboard-top-productos {
+            background: rgba(1,36,44,0.85);
+            border: 1.2px solid rgba(250,176,98,0.4);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin-bottom: 24px;
+        }
+        .dashboard-top-productos h4 {
+            color: #fab062;
+            margin: 0 0 12px 0;
+        }
+        .dashboard-top-productos table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .dashboard-top-productos th {
+            color: #fab062;
+            border-bottom: 1px solid rgba(250,176,98,0.3);
+            padding: 6px 10px;
+            text-align: left;
+            font-size: 0.9em;
+        }
+        .dashboard-top-productos td {
+            color: #fff;
+            padding: 6px 10px;
+            border-bottom: 1px solid rgba(250,176,98,0.1);
+            font-size: 0.9em;
+        }
+        .dashboard-email-section {
+            background: rgba(1,36,44,0.85);
+            border: 1.2px solid rgba(250,176,98,0.4);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin-bottom: 24px;
+        }
+        .dashboard-email-section h4 {
+            color: #fab062;
+            margin: 0 0 12px 0;
+        }
+        .dashboard-email-section label {
+            color: #fab062;
+            font-size: 0.85em;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .dashboard-email-section input {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid rgba(250,176,98,0.4);
+            border-radius: 6px;
+            background: #fffbe6;
+            color: #3a3a3a;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        .dashboard-email-section .acciones-inline {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        @media (max-width: 900px) {
+            .dashboard-charts {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        (function() {
+            const rolUsuario = localStorage.getItem('usuarioRol');
+            // Solo Admin (1) y Presidente (3) pueden ver el Dashboard
+            if (rolUsuario !== '1' && rolUsuario !== '3') {
+                window.location.href = '../moduloServicios/clientes/index.html';
+                return;
+            }
+            const estilos = [];
+            if (rolUsuario !== '1') estilos.push('a[href*="abmUsuarios"] { display: none !important; }');
+            if (rolUsuario === '2') estilos.push('a[href*="stock.html"] { display: none !important; }');
+            if (estilos.length) {
+                const estilo = document.createElement('style');
+                estilo.textContent = estilos.join(' ');
+                document.head.appendChild(estilo);
+            }
+        })();
+    </script>
+    <header class="header-principal">
+        <nav class="pestanas-navegacion">
+            <a href="dashboard.html" class="pestana">Dashboard</a>
+            <a href="../moduloServicios/clientes/index.html" class="pestana">Gestión de Clientes</a>
+            <a href="../moduloServicios/servicios/servicios.html" class="pestana">Servicios</a>
+            <a href="../moduloStock/stock.html" class="pestana">Stock</a>
+            <a href="../moduloServicios/presupuestos/presupuestos.html" class="pestana">Presupuestos</a>
+            <a href="../moduloLogin/abmUsuarios/abmUsuarios.html" class="pestana">ABM</a>
+        </nav>
+        <img src="../recursos/botonONOFF.svg" alt="Cerrar Sesión" class="boton-cierre-sesion">
+    </header>
+
+    <main class="container-stock" style="padding: 20px;">
+        <div class="titulo-con-logo">
+            <img src="../recursos/Logo Los Gallegos.png" alt="Logo" class="logo-titulo">
+            <h1 style="color:#fab062;">Dashboard</h1>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <h4>Servicios Hoy</h4>
+                <div class="kpi-valor" id="kpi-servicios-hoy">0</div>
+            </div>
+            <div class="dashboard-card">
+                <h4>Servicios Ayer</h4>
+                <div class="kpi-valor" id="kpi-servicios-ayer">0</div>
+            </div>
+            <div class="dashboard-card">
+                <h4>Ingresos Hoy</h4>
+                <div class="kpi-valor" id="kpi-ingresos-hoy">$0</div>
+            </div>
+            <div class="dashboard-card">
+                <h4>Ingresos del Mes</h4>
+                <div class="kpi-valor" id="kpi-ingresos-mes">$0</div>
+            </div>
+            <div class="dashboard-card">
+                <h4>Clientes Totales</h4>
+                <div class="kpi-valor" id="kpi-clientes-total">0</div>
+            </div>
+            <div class="dashboard-card">
+                <h4>Alertas de Stock</h4>
+                <div class="kpi-valor" id="kpi-alertas-stock" style="color:#e20613;">0</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="dashboard-charts">
+            <div class="chart-container">
+                <h4>Tipos de Servicio (Mes Actual)</h4>
+                <canvas id="chart-tipos-servicio"></canvas>
+            </div>
+            <div class="chart-container">
+                <h4>Servicios - Últimos 30 Días</h4>
+                <canvas id="chart-servicios-30dias"></canvas>
+            </div>
+        </div>
+
+        <!-- Top 5 Productos -->
+        <div class="dashboard-top-productos">
+            <h4>Top 5 Productos Consumidos (Mes Actual)</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Producto</th>
+                        <th>Cantidad Usada</th>
+                    </tr>
+                </thead>
+                <tbody id="top-productos-body">
+                    <tr><td colspan="3" style="text-align:center; color:#bbb;">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Email Config Section -->
+        <div class="dashboard-email-section">
+            <h4>Configuración de Email (Recordatorios)</h4>
+            <label for="email-host">Host SMTP:</label>
+            <input type="text" id="email-host" placeholder="smtp.gmail.com">
+            <label for="email-port">Puerto:</label>
+            <input type="number" id="email-port" placeholder="587">
+            <label for="email-user">Usuario/Email:</label>
+            <input type="text" id="email-user" placeholder="tucuenta@gmail.com">
+            <label for="email-pass">Contraseña/App Password:</label>
+            <input type="password" id="email-pass" placeholder="••••••••">
+            <div class="acciones-inline">
+                <button type="button" id="btn-guardar-email-config" class="btn-mini">Guardar Config</button>
+                <button type="button" id="btn-test-email" class="btn-mini">Enviar Test</button>
+                <button type="button" id="btn-run-reminders-now" class="btn-mini">Ejecutar Recordatorios Ahora</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal-sistema" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-titulo" class="modal-titulo">Título</h3>
+            <p id="modal-mensaje" class="modal-texto"></p>
+            <p id="modal-submensaje" class="modal-subtexto"></p>
+            <div class="modal-botones">
+                <button id="btn-modal-cancelar" class="modal-btn cancelar">Cancelar</button>
+                <button id="btn-modal-confirmar" class="modal-btn confirmar">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../node_modules/chart.js/dist/chart.umd.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>

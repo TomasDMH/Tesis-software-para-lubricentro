@@ -1,0 +1,17 @@
+#!/bin/sh
+# Sanitización automática antes de commitear.
+
+node scripts/clear-smtp-config.js
+if [ $? -ne 0 ]; then
+  echo "[pre-commit] Error limpiando SMTP. Commit cancelado."
+  exit 1
+fi
+
+node scripts/sanitize-public-db.js
+if [ $? -ne 0 ]; then
+  echo "[pre-commit] Error sanitizando datos públicos. Commit cancelado."
+  exit 1
+fi
+
+git add bd/losgallegos.db
+exit 0

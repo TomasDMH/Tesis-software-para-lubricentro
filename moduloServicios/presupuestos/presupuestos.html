@@ -1,0 +1,373 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Presupuestos - Los Gallegos</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+    <link rel="stylesheet" href="../../css/estilos.css">
+    <style>
+        .container-presupuestos {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .presupuesto-main {
+            display: flex;
+            gap: 20px;
+        }
+        .presupuesto-panel-izq {
+            flex: 1;
+            min-width: 380px;
+            max-width: 520px;
+            background: rgba(1,36,44,0.85);
+            border: 1.2px solid rgba(250,176,98,0.4);
+            border-radius: 12px;
+            padding: 18px 20px;
+        }
+        .presupuesto-panel-der {
+            flex: 2;
+            background: rgba(1,36,44,0.85);
+            border: 1.2px solid rgba(250,176,98,0.4);
+            border-radius: 12px;
+            padding: 18px 20px;
+            overflow-x: auto;
+        }
+        .presupuesto-panel-izq h3,
+        .presupuesto-panel-der h3 {
+            color: #fab062;
+            margin: 0 0 14px 0;
+        }
+        .presupuesto-panel-izq label {
+            color: #fab062;
+            font-size: 0.85em;
+            display: block;
+            margin-bottom: 3px;
+        }
+        .presupuesto-panel-izq input,
+        .presupuesto-panel-izq textarea,
+        .presupuesto-panel-izq select {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1px solid rgba(250,176,98,0.4);
+            border-radius: 6px;
+            background: #fffbe6;
+            color: #3a3a3a;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            font-size: 0.95em;
+        }
+        .presupuesto-panel-izq textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+        .presupuesto-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .presupuesto-items-table th {
+            color: #fab062;
+            border-bottom: 1px solid rgba(250,176,98,0.3);
+            padding: 6px 8px;
+            text-align: left;
+            font-size: 0.85em;
+        }
+        .presupuesto-items-table td {
+            color: #fff;
+            padding: 6px 8px;
+            border-bottom: 1px solid rgba(250,176,98,0.1);
+            font-size: 0.9em;
+        }
+        .presupuesto-items-table select,
+        .presupuesto-items-table input {
+            padding: 5px 8px;
+            border: 1px solid rgba(250,176,98,0.4);
+            border-radius: 4px;
+            background: #fffbe6;
+            color: #3a3a3a;
+            font-size: 0.9em;
+        }
+        .presupuesto-total {
+            text-align: right;
+            color: #fab062;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+        .presupuesto-lista-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .presupuesto-lista-table th {
+            color: #fab062;
+            border-bottom: 1px solid rgba(250,176,98,0.3);
+            padding: 8px 10px;
+            text-align: left;
+            font-size: 0.85em;
+        }
+        .presupuesto-lista-table td {
+            color: #fff;
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(250,176,98,0.1);
+            font-size: 0.9em;
+        }
+        .estado-pendiente { color: #f8cc3d; font-weight: bold; }
+        .estado-aprobado { color: #2e7d32; font-weight: bold; }
+        .estado-rechazado { color: #e20613; font-weight: bold; }
+        .acciones-presupuesto {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .acciones-presupuesto button {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .btn-aprobar { background: #2e7d32; color: #fff; }
+        .btn-rechazar { background: #a60530; color: #fff; }
+        .btn-registrar-serv { background: #1976d2; color: #fff; }
+        .btn-eliminar-presu { background: #e20613; color: #fff; }
+        .btn-ver-presu { background: #f8cc3d; color: #01242c; }
+
+        /* Sub-pestañas estilo Stock */
+        .subpestanas-stock {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0 18px 0;
+            flex-wrap: wrap;
+        }
+        .subpestanas-stock .btn-subpestana {
+            padding: 10px 14px;
+            border: 1.2px solid #fab062;
+            background: #01242c;
+            color: #fab062;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .subpestanas-stock .btn-subpestana.activa {
+            background: #fab062;
+            color: #01242c;
+        }
+
+        /* Productos presupuesto */
+        .presu-producto-wrapper {
+            position: relative;
+        }
+        .presu-producto-wrapper .resultados-flotantes {
+            width: 100%;
+            max-height: 190px;
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        // Control de visibilidad según rol
+        (function() {
+            const rolUsuario = localStorage.getItem('usuarioRol');
+            const estilos = [];
+            if (rolUsuario !== '1') estilos.push('a[href*="abmUsuarios"] { display: none !important; }');
+            if (rolUsuario !== '1' && rolUsuario !== '3') estilos.push('a[href*="dashboard"] { display: none !important; }');
+            if (rolUsuario === '2') estilos.push('a[href*="stock.html"] { display: none !important; }');
+            if (estilos.length) {
+                const estilo = document.createElement('style');
+                estilo.textContent = estilos.join(' ');
+                document.head.appendChild(estilo);
+            }
+        })();
+    </script>
+    <header class="header-principal">
+        <nav class="pestanas-navegacion">
+            <a href="../../moduloDashboard/dashboard.html" class="pestana">Dashboard</a>
+            <a href="../clientes/index.html" class="pestana">Gestión de Clientes</a>
+            <a href="../servicios/servicios.html" class="pestana">Servicios</a>
+            <a href="../../moduloStock/stock.html" class="pestana">Stock</a>
+            <a href="presupuestos.html" class="pestana">Presupuestos</a>
+            <a href="../../moduloLogin/abmUsuarios/abmUsuarios.html" class="pestana">ABM</a>
+        </nav>
+        <img src="../../recursos/botonONOFF.svg" alt="Cerrar Sesión" class="boton-cierre-sesion">
+    </header>
+
+    <main class="container-presupuestos">
+        <div class="titulo-con-logo">
+            <img src="../../recursos/Logo Los Gallegos.png" alt="Logo" class="logo-titulo">
+            <h1 style="color:#fab062;">Presupuestos</h1>
+        </div>
+
+        <!-- Sub-pestañas (estilo Stock) -->
+        <div class="subpestanas-stock">
+            <button type="button" id="tab-crear-presupuesto" class="btn-subpestana activa">Crear Presupuesto</button>
+            <button type="button" id="tab-tipos-servicio" class="btn-subpestana">Tipos de Servicio</button>
+        </div>
+
+        <!-- VISTA 1: CREAR PRESUPUESTO -->
+        <div id="vista-crear-presupuesto" class="presupuesto-main">
+            <!-- Panel Izquierdo: Formulario -->
+            <div class="presupuesto-panel-izq">
+                <h3 id="titulo-form-presupuesto">Nuevo Presupuesto</h3>
+
+                <label>Cliente (Nombre / DNI / Patente)</label>
+                <div style="position:relative;">
+                    <input type="text" id="presu-buscar-cliente" autocomplete="off" placeholder="Buscar...">
+                    <div id="presu-resultados-cliente" class="resultados-flotantes" style="display:none;"></div>
+                </div>
+
+                <label>Cliente seleccionado</label>
+                <div id="presu-cliente-seleccionado" style="background:rgba(255,255,255,0.08); border:1px solid rgba(250,176,98,0.3); border-radius:6px; padding:8px 12px; margin-bottom:10px; color:#fff; font-size:0.92em;">
+                    <div id="presu-cliente-nombre">-</div>
+                    <div id="presu-cliente-dni" style="color:#bbb; font-size:0.88em;">DNI: -</div>
+                </div>
+
+                <label for="presu-observaciones">Observaciones</label>
+                <textarea id="presu-observaciones" placeholder="Opcional"></textarea>
+
+                <hr style="border-color:rgba(250,176,98,0.2); margin:10px 0;">
+
+                <label>Ítems</label>
+                <div style="display:flex; gap:8px; margin-bottom:6px;">
+                    <select id="presu-select-tipo" style="flex:1;"></select>
+                    <button type="button" id="btn-agregar-item-presu" class="btn-mini">Agregar</button>
+                </div>
+                <p style="color:#bbb; font-size:0.78em; margin:0 0 8px 0;">El precio se toma automáticamente desde Tipo de Servicio.</p>
+
+                <table class="presupuesto-items-table">
+                    <thead>
+                        <tr>
+                            <th>Servicio</th>
+                            <th>Precio</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="presu-items-body">
+                        <tr id="presu-items-placeholder"><td colspan="3" style="text-align:center; color:#bbb;">Agregá ítems.</td></tr>
+                    </tbody>
+                </table>
+
+                <hr style="border-color:rgba(250,176,98,0.2); margin:10px 0;">
+
+                <label>Productos / Insumos</label>
+                <div class="presu-producto-wrapper">
+                    <input type="text" id="presu-buscar-producto" autocomplete="off" placeholder="Buscar producto...">
+                    <div id="presu-resultados-producto" class="resultados-flotantes" style="display:none;"></div>
+                </div>
+                <p style="color:#bbb; font-size:0.78em; margin:0 0 6px 0;">Seleccioná un producto e ingresá la cantidad (litros o unidades).</p>
+
+                <table class="presupuesto-items-table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cant.</th>
+                            <th>Precio Unit.</th>
+                            <th>Subtotal</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="presu-productos-body">
+                        <tr id="presu-productos-placeholder"><td colspan="5" style="text-align:center; color:#bbb;">Sin productos.</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="presupuesto-total">
+                    Total <span id="presu-total">$0</span>
+                </div>
+
+                <button type="button" id="btn-guardar-presu" class="btn-mini" style="width:100%; padding:10px; font-size:1em;">Crear Presupuesto</button>
+            </div>
+
+            <!-- Panel Derecho: Historial -->
+            <div class="presupuesto-panel-der">
+                <h3>Historial</h3>
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px;">
+                    <label style="color:#fab062; font-weight:bold; margin:0;">Estado:</label>
+                    <select id="presu-filtro-estado" style="padding:6px 10px; border:1px solid rgba(250,176,98,0.4); border-radius:6px; background:#fffbe6; color:#3a3a3a;">
+                        <option value="">Todos</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Aprobado">Aprobado</option>
+                        <option value="Rechazado">Rechazado</option>
+                    </select>
+                    <button type="button" id="btn-recargar-presu" class="btn-mini">Recargar</button>
+                </div>
+                <table class="presupuesto-lista-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Estado</th>
+                            <th>Total</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="presu-lista-body">
+                        <tr><td colspan="5" style="text-align:center; color:#bbb;">Cargando...</td></tr>
+                    </tbody>
+                </table>
+                <p style="color:#bbb; font-size:0.78em; margin-top:12px;">"Registrar como Servicio" lleva el presupuesto a la pantalla de Servicios para completar insumos y registrar.</p>
+            </div>
+        </div>
+
+        <!-- VISTA 2: ABM TIPOS DE SERVICIO -->
+        <div id="vista-tipos-servicio" class="presupuesto-main" style="display:none;">
+            <!-- Panel Izquierdo: Formulario ABM -->
+            <div class="presupuesto-panel-izq">
+                <h3 id="titulo-form-tipo">ABM Tipo de Servicio</h3>
+                <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom:10px;">
+                    <div style="flex:2;">
+                        <label>Nombre</label>
+                        <input type="text" id="tipo-nombre" placeholder="Cambio de aceite">
+                    </div>
+                    <div style="flex:1;">
+                        <label>Precio Base</label>
+                        <input type="text" id="tipo-precio" placeholder="0" inputmode="numeric" autocomplete="off">
+                    </div>
+                </div>
+                <input type="hidden" id="tipo-id-editar" value="">
+                <div style="text-align:right;">
+                    <button type="button" id="btn-guardar-tipo" class="btn-mini">Guardar</button>
+                </div>
+                <p style="color:#bbb; font-size:0.78em; margin-top:14px;">Estos valores alimentan Presupuestos y el panel de Servicios.</p>
+            </div>
+
+            <!-- Panel Derecho: Lista de Tipos -->
+            <div class="presupuesto-panel-der">
+                <h3>Tipos existentes</h3>
+                <table class="presupuesto-lista-table">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Precio</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tipos-lista-body">
+                        <tr><td colspan="3" style="text-align:center; color:#bbb;">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal-sistema" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-titulo" class="modal-titulo">Título</h3>
+            <p id="modal-mensaje" class="modal-texto"></p>
+            <p id="modal-submensaje" class="modal-subtexto"></p>
+            <div class="modal-botones">
+                <button id="btn-modal-cancelar" class="modal-btn cancelar">Cancelar</button>
+                <button id="btn-modal-confirmar" class="modal-btn confirmar">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="presupuestos.js"></script>
+</body>
+</html>

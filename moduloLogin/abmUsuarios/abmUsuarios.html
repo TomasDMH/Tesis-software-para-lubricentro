@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+    <title>ABM de Usuarios</title>
+    <link rel="stylesheet" href="../../css/estilos.css">
+</head>
+
+<body>
+    <script>
+        (function() {
+            const rolUsuario = localStorage.getItem('usuarioRol');
+            if (rolUsuario !== '1') {
+                window.location.href = '../../moduloServicios/clientes/index.html';
+                return;
+            }
+        })();
+    </script>
+    <header class="header-principal">
+        <nav class="pestanas-navegacion">
+            <a href="../../moduloDashboard/dashboard.html" class="pestana">Dashboard</a>
+            <a href="../../moduloServicios/clientes/index.html" class="pestana">Gestión de Clientes</a>
+            <a href="../../moduloServicios/servicios/servicios.html" class="pestana">Servicios</a>
+            <a href="../../moduloStock/stock.html" class="pestana">Stock</a>
+            <a href="../../moduloServicios/presupuestos/presupuestos.html" class="pestana">Presupuestos</a>
+            <a href="../../moduloLogin/abmUsuarios/abmUsuarios.html" class="pestana">ABM</a>
+        </nav>
+        <img src="../../recursos/botonONOFF.svg" alt="Cerrar Sesión" class="boton-cierre-sesion">
+    </header>
+
+    <main class="container-abm-usuarios">
+        
+        <div class="titulo-con-logo">
+            <img src="../../recursos/Logo Los Gallegos.png" alt="Logo" class="logo-titulo">
+            <h1 class="titulo-abm-usuarios">ABM de Usuarios</h1>
+        </div>
+
+        <div class="main-content-abm-usuarios">
+
+            <section class="panel-izq-abm-usuarios">
+                <form>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h2 class="subtitulo-abm-usuarios">Registrar Usuario</h2>
+                        <button type="button" id="btn-cancelar-edicion-abm" class="btn-cancelar-edicion" style="display:none;">Cancelar Edición</button>
+                    </div>
+                    <input type="hidden" id="id-usuario-edicion">
+                    <div class="form-group-abm-usuarios">
+                        <label for="nombre-completo">Nombre Completo:</label>
+                        <input type="text" id="nombre-completo" class="input-abm-usuarios">
+                    </div>
+                    <div class="form-group-abm-usuarios">
+                        <label for="rol-usuario">Rol:</label>
+                        <select id="rol-usuario" class="select-abm-usuarios">
+                            <option value="admin">Administrador ABM</option>
+                            <option value="empleado">Empleado</option>
+                            <option value="presidente">Presidente</option>
+                            <option value="encargado">Encargado</option>
+                        </select>
+                    </div>
+                    <div class="form-group-abm-usuarios">
+                        <label for="contrasena-usuario">Contraseña:</label>
+                        <input type="password" id="contrasena-usuario" class="input-abm-usuarios">
+                    </div>
+                    <div class="botones-form-abm">
+                        <button type="submit" class="registrar-usuario-btn">Registrar Usuario</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="panel-der-abm-usuarios">
+                <h2 class="subtitulo-abm-usuarios">Usuarios del Sistema</h2>
+                <input type="text" class="buscar-usuario-input" placeholder="Buscar usuario...">
+                
+                <div class="lista-usuarios">
+                    <!-- La lista de usuarios se carga acá desde JS -->
+                </div>
+                 <button type="button" class="eliminar-seleccionado-usuarios">Eliminar Seleccionado</button>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Modal del sistema (reemplaza alert/confirm) -->
+    <div id="modal-sistema" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-titulo" class="modal-titulo">Atención</h2>
+            <p id="modal-mensaje" class="modal-texto"></p>
+            <small id="modal-submensaje" class="modal-subtexto"></small>
+            <div class="modal-botones">
+                <button id="btn-modal-cancelar" class="modal-btn cancelar">Cancelar</button>
+                <button id="btn-modal-confirmar" class="modal-btn aceptar">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="abmUsuarios.js"></script>
+
+</body>
+
+</html>

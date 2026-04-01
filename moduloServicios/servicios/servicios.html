@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Servicios</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+    <link rel="stylesheet" href="../../css/estilos.css">
+    
+    <style>
+        /* Ajuste para que la tabla no tenga scroll interno y deje actuar a la paginación */
+        .stock-table-servicios {
+            max-height: none !important;
+            overflow-y: visible !important; 
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        // Control de visibilidad según rol
+        (function() {
+            const rolUsuario = localStorage.getItem('usuarioRol');
+            const estilos = [];
+            if (rolUsuario !== '1') estilos.push('a[href*="abmUsuarios"] { display: none !important; }');
+            if (rolUsuario !== '1' && rolUsuario !== '3') estilos.push('a[href*="dashboard"] { display: none !important; }');
+            if (rolUsuario === '2') estilos.push('a[href*="stock.html"] { display: none !important; }');
+            if (estilos.length) {
+                const estilo = document.createElement('style');
+                estilo.textContent = estilos.join(' ');
+                document.head.appendChild(estilo);
+            }
+        })();
+    </script>
+    <header class="header-principal">
+        <nav class="pestanas-navegacion">
+            <a href="../../moduloDashboard/dashboard.html" class="pestana">Dashboard</a>
+            <a href="../clientes/index.html" class="pestana">Gestión de Clientes</a>
+            <a href="servicios.html" class="pestana">Servicios</a>
+            <a href="../../moduloStock/stock.html" class="pestana">Stock</a>
+            <a href="../presupuestos/presupuestos.html" class="pestana">Presupuestos</a>
+            <a href="../../moduloLogin/abmUsuarios/abmUsuarios.html" class="pestana">ABM</a>
+        </nav>
+       <img src="../../recursos/botonONOFF.svg" alt="Cerrar Sesión" class="boton-cierre-sesion">
+    </header>
+
+    <main class="container-servicios">
+
+        <div class="titulo-con-logo">
+            <img src="../../recursos/Logo Los Gallegos.png" alt="Logo" class="logo-titulo">
+            <h1 class="titulo-servicios">Gestión de Servicios</h1>
+        </div>
+
+        <div class="main-content-servicios">
+
+           <section class="panel-izq-servicios">
+                <h2 class="subtitulo-servicios">Registrar Servicio</h2>
+                
+                <div class="form-group-servicios servicios-form-group-vehiculo">
+                    <label for="busqueda-vehiculo">Vehículo (Patente):</label>
+                    <input type="text" id="busqueda-vehiculo" class="input-servicios" autocomplete="off" placeholder="Buscar por patente...">
+                    <div id="resultados-busqueda" class="resultados-flotantes"></div>
+                </div>
+
+                <div class="form-group-servicios servicios-form-group-litros">
+                    <label for="input-litros-usados">Litros Usados:</label>
+                    <input type="text" id="input-litros-usados" class="input-servicios" placeholder="0">
+                </div>
+
+                <div class="form-group-servicios servicios-form-group-fecha">
+                    <label for="input-fecha">Fecha:</label>
+                    <input type="text" id="input-fecha" class="fecha-servicio-input" placeholder="DD/MM/YYYY" readonly>
+                </div>
+
+                <div class="form-group-servicios" id="tipos-servicio-panel">
+                    <label style="color:#fab062; font-weight:bold;">Tipo de Servicio:</label>
+                    <div id="tipos-servicio-checkboxes" style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;"></div>
+                </div>
+
+                <div class="servicios-fila-kilometros">
+                    <div class="form-group-servicios servicios-form-group-klm-act">
+                        <label for="input-klm-actuales">Klms actuales:</label>
+                        <input type="text" id="input-klm-actuales" class="input-klm-servicios" placeholder="0">
+                    </div>
+
+                    <div class="form-group-servicios servicios-form-group-klm-prox">
+                        <label for="input-klm-proximos">Klms (Prox. Service):</label>
+                        <input type="text" id="input-klm-proximos" class="input-klm-servicios" placeholder="0">
+                    </div>
+                </div>
+
+                <h3 class="servicios-titulo-stock">Stock de Insumos</h3>
+                <input type="text" class="buscar-insumo-servicios servicios-buscar-insumo" placeholder="Buscar...">
+
+                <div class="insumos-lista-servicios servicios-insumos-lista" id="lista-insumos-container">
+                </div>
+
+                <div style="text-align:right; color:#fab062; font-weight:bold; font-size:1.15em; margin:10px 0 4px 0;">
+                    Total: <span id="total-servicio-display">$0</span>
+                </div>
+                
+                <button type="button" class="registrar-btn-servicios servicios-registrar-btn" style="margin-top: 10px; margin-bottom: 18px;">Registrar</button>
+
+                <hr style="border: 1px solid rgba(250,176,98,0.35); margin: 18px 0;">
+
+                <h2 class="subtitulo-servicios">Venta Particular</h2>
+
+                <form id="form-venta-particular">
+                    <div class="form-group-servicios" style="position:relative;">
+                        <label for="venta-busqueda-cliente">Cliente / Vehículo:</label>
+                        <input type="text" id="venta-busqueda-cliente" class="input-servicios" autocomplete="off" placeholder="Buscar por nombre, DNI o patente...">
+                        <div id="resultados-venta-cliente" class="resultados-flotantes"></div>
+                    </div>
+
+                    <div class="form-group-servicios" style="position:relative;">
+                        <label for="venta-producto">Producto:</label>
+                        <input type="text" id="venta-producto" class="input-servicios" autocomplete="off" placeholder="Buscar producto...">
+                        <div id="resultados-venta-producto" class="resultados-flotantes"></div>
+                    </div>
+
+                    <table style="width:100%; border-collapse:collapse; margin-bottom:10px;">
+                        <thead>
+                            <tr>
+                                <th style="color:#fab062; border-bottom:1px solid rgba(250,176,98,0.3); padding:6px 8px; text-align:left; font-size:0.85em;">Producto</th>
+                                <th style="color:#fab062; border-bottom:1px solid rgba(250,176,98,0.3); padding:6px 8px; text-align:center; font-size:0.85em; width:80px;">Cant.</th>
+                                <th style="color:#fab062; border-bottom:1px solid rgba(250,176,98,0.3); padding:6px 8px; text-align:right; font-size:0.85em;">P. Unit.</th>
+                                <th style="color:#fab062; border-bottom:1px solid rgba(250,176,98,0.3); padding:6px 8px; text-align:right; font-size:0.85em;">Subtotal</th>
+                                <th style="color:#fab062; border-bottom:1px solid rgba(250,176,98,0.3); padding:6px 8px; text-align:center; font-size:0.85em; width:50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="venta-productos-body">
+                            <tr id="venta-productos-placeholder"><td colspan="5" style="text-align:center; color:#bbb; padding:10px;">Sin productos.</td></tr>
+                        </tbody>
+                    </table>
+
+                    <div class="form-group-servicios servicios-form-group-fecha">
+                        <label for="venta-fecha">Fecha:</label>
+                        <input type="text" id="venta-fecha" class="fecha-servicio-input" placeholder="DD/MM/YYYY" readonly>
+                    </div>
+
+                    <div class="form-group-servicios servicios-form-group-descripcion">
+                        <label for="venta-detalle">Detalle:</label>
+                        <input type="text" id="venta-detalle" class="input-descripcion-servicios" placeholder="Ej: Venta de aceite por mostrador">
+                    </div>
+
+                    <div style="text-align:right; color:#fab062; font-weight:bold; font-size:1.15em; margin:8px 0;">
+                        Total: <span id="venta-total-display">$0</span>
+                    </div>
+
+                    <button type="submit" class="registrar-btn-servicios" id="btn-registrar-venta" style="margin-top: 10px; margin-bottom: 18px;">Registrar Venta</button>
+                </form>
+
+            </section>
+
+            <aside class="panel-derecho-servicios">
+                <h3 class="subtitulo-consulta-servicios">Consulta de Stock</h3>
+                <div class="form-group-servicios">
+                    <label for="buscar-producto-servicios">Producto:</label>
+                    <input type="text" id="buscar-producto-servicios" class="buscar-producto-servicios" placeholder="Buscar...">
+                </div>
+                
+                <table class="stock-table-servicios servicios-tabla-stock-consulta" id="tabla-stock-consulta">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-stock-consulta-body">
+                    </tbody>
+                </table>
+
+                <div class="paginacion-container" id="paginacion-consulta-controls" style="display: none;">
+                    <button type="button" id="btn-prev-consulta" class="btn-paginacion">&lt;</button>
+                    <span id="info-pagina-consulta" class="info-paginacion">1 / 1</span>
+                    <button type="button" id="btn-next-consulta" class="btn-paginacion">&gt;</button>
+                </div>
+
+            </aside>
+            
+        </div>
+    </main>
+
+    <div id="modal-sistema" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-titulo" class="modal-titulo">Título del Modal</h3>
+            
+            <p id="modal-mensaje" class="modal-texto">Mensaje principal aquí.</p>
+            
+            <p id="modal-submensaje" class="modal-subtexto"></p>
+
+            <div class="modal-botones">
+                <button id="btn-modal-cancelar" class="modal-btn cancelar">Cancelar</button>
+                <button id="btn-modal-confirmar" class="modal-btn confirmar">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="servicios.js"></script>
+</body>
+</html>

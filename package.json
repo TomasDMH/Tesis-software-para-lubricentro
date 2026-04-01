@@ -1,0 +1,65 @@
+{
+  "name": "tesis",
+  "version": "1.0.0",
+  "description": "Sistema de gestión para el lubricentro Los Gallegos.",
+  "author": "Espinosa, Lautaro Valentin, Graffi, Mario Martín y Muñoz, Tomás Daniel ",
+  "main": "principal.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "nodemon --watch . --exec electron .",
+    "build": "electron-builder --win",
+    "sanitize:smtp": "node scripts/clear-smtp-config.js",
+    "sanitize:public-db": "node scripts/sanitize-public-db.js",
+    "sanitize:prepush": "npm run sanitize:smtp && npm run sanitize:public-db",
+    "prepare": "node scripts/install-git-hooks.js"
+  },
+  "build": {
+    "appId": "com.losgallegos.lubricentro",
+    "productName": "Los Gallegos Lubricentro",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "principal.js",
+      "puente.js",
+      "css/**/*",
+      "moduloLogin/**/*",
+      "moduloServicios/**/*",
+      "moduloStock/**/*",
+      "moduloDashboard/**/*",
+      "recursos/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "bd/losgallegos.db",
+        "to": "bd/losgallegos.db"
+      }
+    ],
+    "win": {
+      "icon": "recursos/logo-Los-Gallegos (2).ico",
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "recursos/logo-Los-Gallegos (2).ico",
+      "uninstallerIcon": "recursos/logo-Los-Gallegos (2).ico",
+      "installerHeaderIcon": "recursos/logo-Los-Gallegos (2).ico"
+    }
+  },
+  "devDependencies": {
+    "electron": "^35.7.4",
+    "electron-builder": "^26.8.1",
+    "nodemon": "^3.1.10"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "chart.js": "^4.5.1",
+    "nodemailer": "^8.0.1",
+    "sqlite3": "^5.0.2"
+  }
+}

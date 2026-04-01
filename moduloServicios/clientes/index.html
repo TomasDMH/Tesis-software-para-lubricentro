@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';">
+    <title>Gestión de Clientes</title>
+    <link rel="stylesheet" href="../../css/estilos.css">
+    
+    <style>
+        /* Desactivar scroll interno para que funcione la paginación */
+        .historial-scroll-container {
+            max-height: none !important;
+            overflow-y: visible !important;
+            height: auto !important; 
+        }
+    </style>
+</head>
+
+<body>
+    <script>
+        // Control de visibilidad según rol
+        (function() {
+            const rolUsuario = localStorage.getItem('usuarioRol');
+            const estilos = [];
+            if (rolUsuario !== '1') estilos.push('a[href*="abmUsuarios"] { display: none !important; }');
+            if (rolUsuario !== '1' && rolUsuario !== '3') estilos.push('a[href*="dashboard"] { display: none !important; }');
+            if (rolUsuario === '2') estilos.push('a[href*="stock.html"] { display: none !important; }');
+            if (estilos.length) {
+                const estilo = document.createElement('style');
+                estilo.textContent = estilos.join(' ');
+                document.head.appendChild(estilo);
+            }
+        })();
+    </script>
+    <header class="header-principal">
+        <nav class="pestanas-navegacion">
+            <a href="../../moduloDashboard/dashboard.html" class="pestana">Dashboard</a>
+            <a href="index.html" class="pestana">Gestión de Clientes</a>
+            <a href="../servicios/servicios.html" class="pestana">Servicios</a>
+            <a href="../../moduloStock/stock.html" class="pestana">Stock</a>
+            <a href="../presupuestos/presupuestos.html" class="pestana">Presupuestos</a>
+            <a href="../../moduloLogin/abmUsuarios/abmUsuarios.html" class="pestana">ABM</a>
+        </nav>
+        <img src="../../recursos/botonONOFF.svg" alt="Cerrar Sesión" class="boton-cierre-sesion">
+    </header>
+
+    <main class="container-clientes">
+
+        <div class="titulo-con-logo">
+            <img src="../../recursos/Logo Los Gallegos.png" alt="Logo" class="logo-titulo">
+            <h1 class="titulo-clientes">Gestión de Clientes</h1>
+        </div>
+
+        <div class="main-content-clientes">
+
+            <section class="panel-izq-clientes">
+                <form class="form-clientes">
+                    <input type="hidden" id="cliente-id-oculto">
+
+                    <div class="clientes-form-header">
+                        <h2 class="subtitulo-clientes">Registro de Cliente</h2>
+                        <button type="button" id="btn-limpiar-edicion" class="btn-cancelar-edicion">Cancelar Edición</button>
+                    </div>
+
+                    <div class="form-group-clientes">
+                        <label for="nombre-clientes">Nombre:</label>
+                        <input type="text" id="nombre-clientes" name="nombre" class="input-clientes">
+                    </div>
+                    <div class="form-group-clientes">
+                        <label for="apellido-clientes">Apellido:</label>
+                        <input type="text" id="apellido-clientes" name="apellido" class="input-clientes">
+                    </div>
+                    <div class="form-group-clientes">
+                        <label for="telefono-clientes">Teléfono:</label>
+                        <input type="text" id="telefono-clientes" name="telefono" class="input-clientes">
+                    </div>
+                    <div class="form-group-clientes">
+                        <label for="dni-clientes">DNI:</label>
+                        <input type="text" id="dni-clientes" name="DNI" class="input-clientes">
+                    </div>
+                    <div class="form-group-clientes">
+                        <label for="email-clientes">Email:</label>
+                        <input type="email" id="email-clientes" name="email" class="input-clientes" placeholder="ejemplo@mail.com">
+                    </div>
+
+                    <div class="vehiculos-asociados-clientes">
+                        <table class="vehiculos-table-clientes">
+                            <thead>
+                                <tr>
+                                    <th>Marca</th>
+                                    <th>Modelo</th>
+                                    <th>Patente</th>
+                                    <th>Año</th>
+                                    <th></th> 
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <select class="input-vehiculos-clientes select-marca-vehiculo" required>
+                                            <option value="">Marca</option>
+                                        </select>
+                                    </td>
+                                    <td><input type="text" class="input-vehiculos-clientes" required></td>
+                                    <td><input type="text" class="input-vehiculos-clientes" required></td>
+                                    <td><input type="number" class="input-vehiculos-clientes" min="1900" max="2100" required></td>
+                                    <td><button type="button" class="vehiculo-btn-clientes agregar-clientes">+</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="form-group-clientes">
+                        <label for="input-nueva-marca-vehiculo">Agregar Marca:</label>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input type="text" id="input-nueva-marca-vehiculo" class="input-clientes" placeholder="Nueva marca" style="flex:1;">
+                            <button type="button" id="btn-agregar-marca-vehiculo" class="vehiculo-btn-clientes agregar-clientes" style="width:auto; padding:4px 12px; font-size:0.9rem;">Agregar</button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="guardar-cliente-btn" style="margin-top:18px;">Guardar Cliente</button>
+                </form>
+            </section>
+
+            <section class="panel-derecho-clientes">
+                <input type="text" class="buscar-cliente-input" placeholder="Buscar cliente...">
+                
+                <div id="lista-clientes">
+                    </div>
+
+                <div class="paginacion-container" id="paginacion-clientes-controls" style="display: none;">
+                    <button type="button" id="btn-prev-clientes" class="btn-paginacion">&lt;</button>
+                    <span id="info-pagina-clientes" class="info-paginacion">1 / 1</span>
+                    <button type="button" id="btn-next-clientes" class="btn-paginacion">&gt;</button>
+                </div>
+
+                <button type="button" class="eliminar-seleccionado-clientes">Eliminar Seleccionado</button>
+            </section>
+
+        </div>
+
+        <aside class="panel-historial-clientes">
+            <h2 class="subtitulo-historial-clientes">Historial de Servicios</h2>
+            
+            <div class="historial-scroll-container">
+                <table class="historial-servicios-clientes" id="historial-servicios-clientes">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Dueño</th>
+                            <th>Vehiculo</th>
+                            <th>Servicio</th>
+                            <th>Litros Usados</th>
+                            <th>Productos Usados</th>
+                            <th>Km Act.</th>
+                            <th>Km Prox. Serv.</th>
+                            <th>Precio</th>
+                            <th>Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="10"><em>Seleccione un cliente para ver su historial.</em></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="paginacion-container" id="paginacion-historial-controls" style="display: none;">
+                <button type="button" id="btn-prev-historial" class="btn-paginacion">Anterior</button>
+                <span id="info-pagina-historial" class="info-paginacion">Página 1 de 1</span>
+                <button type="button" id="btn-next-historial" class="btn-paginacion">Siguiente</button>
+            </div>
+
+        </aside> 
+    </main>
+
+    <div id="modal-sistema" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="modal-titulo" class="modal-titulo">Título del Modal</h3>
+            
+            <p id="modal-mensaje" class="modal-texto">Mensaje principal aquí.</p>
+            
+            <p id="modal-submensaje" class="modal-subtexto"></p>
+
+            <div class="modal-botones">
+                <button id="btn-modal-cancelar" class="modal-btn cancelar">Cancelar</button>
+                <button id="btn-modal-confirmar" class="modal-btn confirmar">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="clientes.js"></script>
+
+</body>
+</html>

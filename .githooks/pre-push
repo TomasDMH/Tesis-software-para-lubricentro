@@ -1,0 +1,21 @@
+#!/bin/sh
+# Doble control de sanitización antes de push.
+
+node scripts/clear-smtp-config.js
+if [ $? -ne 0 ]; then
+  echo "[pre-push] Error limpiando SMTP. Push cancelado."
+  exit 1
+fi
+
+node scripts/sanitize-public-db.js
+if [ $? -ne 0 ]; then
+  echo "[pre-push] Error sanitizando datos públicos. Push cancelado."
+  exit 1
+fi
+
+if ! git diff --quiet -- bd/losgallegos.db; then
+  echo "[pre-push] Se aplicaron cambios de sanitización en bd/losgallegos.db. Hace commit y volvé a pushear."
+  exit 1
+fi
+
+exit 0

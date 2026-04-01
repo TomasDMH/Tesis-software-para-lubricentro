@@ -1,0 +1,55 @@
+# Dependencias
+node_modules/
+
+# Archivos de configuración local
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Archivos temporales y de sistema
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Builds y empaquetados
+dist/
+build/
+out/
+*.asar
+
+# Archivos de entorno (si usás variables locales)
+.env
+.env.local
+.env.*
+
+# Base de datos local / artefactos SQLite
+bd/*.db-wal
+bd/*.db-shm
+bd/*.sqbpro
+*.sqlite
+*.sqlite3
+
+# Archivos de pruebas (si agregás tests en el futuro)
+coverage/
+*.test.js
+*.spec.js
+
+# Capturas o recursos no esenciales
+screenshots/
+
+# Configuración de Electron Packager o Builder (si lo usás más adelante)
+release/
+installer/
+
+# Archivos de backup o edición
+*.bak
+*.old
+*.orig
+*.db.bak
+
+# Documentación generada automáticamente
+*.pdf
+*.docx
+
